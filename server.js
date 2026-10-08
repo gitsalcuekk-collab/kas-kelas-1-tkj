@@ -83,7 +83,6 @@ app.post('/api/transaksi', (req, res) => {
     return res.status(400).json({ success: false, message: 'Jenis transaksi tidak valid!' });
   }
 
-  // Catat ke riwayat
   data.riwayat.unshift({
     id: Date.now(),
     jenis: jenis.toUpperCase(),
@@ -95,6 +94,24 @@ app.post('/api/transaksi', (req, res) => {
 
   writeData(data);
   res.json({ success: true, message: 'Transaksi berhasil ditambahkan!' });
+});
+
+app.delete('/api/transaksi/:id', (req, res) => {
+  const { username, password } = req.body;
+  const { id } = req.params;
+
+  if (username !== 'Suci' || password !== 'suci22') {
+    return res.status(401).json({ success: false, message: 'Username atau Password Admin salah!' });
+  }
+
+  const data = readData();
+  
+  data.pemasukan = data.pemasukan.filter(item => item.id !== Number(id));
+  data.pengeluaran = data.pengeluaran.filter(item => item.id !== Number(id));
+  data.riwayat = data.riwayat.filter(item => item.id !== Number(id));
+
+  writeData(data);
+  res.json({ success: true, message: 'Transaksi berhasil dihapus!' });
 });
 
 app.listen(PORT, () => {

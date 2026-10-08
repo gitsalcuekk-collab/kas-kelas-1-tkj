@@ -5,16 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kas Kelas - Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 font-sans pb-10">
 
   <!-- Navbar Header -->
   <header class="bg-indigo-600 text-white p-5 shadow-lg">
     <div class="max-w-5xl mx-auto flex justify-between items-center">
-      <h1 class="text-2xl font-bold">Kas Kelas <span id="namaKelas">...</span></h1>
-      <button onclick="openModal()" class="bg-white text-indigo-600 px-4 py-2 rounded-lg font-semibold shadow hover:bg-slate-100 transition">
-        + Tambah Transaksi
-      </button>
+      <h1 class="text-2xl font-bold"><i class="fa-solid fa-wallet mr-2"></i>Kas Kelas <span id="namaKelas">...</span></h1>
+      <div class="flex gap-2">
+        <button onclick="exportToCSV()" class="bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-semibold shadow hover:bg-emerald-600 transition flex items-center gap-1">
+          <i class="fa-solid fa-file-excel"></i> Export Excel
+        </button>
+        <button onclick="openModal()" class="bg-white text-indigo-600 px-4 py-2 rounded-lg font-semibold shadow hover:bg-slate-100 transition">
+          + Tambah Transaksi
+        </button>
+      </div>
     </div>
   </header>
 
@@ -39,7 +45,7 @@
     <!-- Tabel Daftar Siswa & Bayar Kas -->
     <div class="bg-white p-6 rounded-xl shadow">
       <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-3">
-        <h2 class="text-xl font-bold">Daftar Siswa & Absen</h2>
+        <h2 class="text-xl font-bold"><i class="fa-solid fa-users mr-2"></i>Daftar Siswa & Absen</h2>
         <input type="text" id="searchSiswa" onkeyup="filterSiswa()" placeholder="Cari nama atau nomor absen..." class="border rounded-lg px-4 py-2 w-full md:w-64 focus:outline-indigo-500">
       </div>
       <div class="overflow-x-auto">
@@ -51,16 +57,22 @@
               <th class="p-3 text-right">Aksi</th>
             </tr>
           </thead>
-          <tbody id="tabelSiswa">
-            <!-- Data siswa di-load dinamis -->
-          </tbody>
+          <tbody id="tabelSiswa"></tbody>
         </table>
       </div>
     </div>
 
     <!-- Riwayat Transaksi -->
     <div class="bg-white p-6 rounded-xl shadow">
-      <h2 class="text-xl font-bold mb-4">Riwayat Aktivitas Transaksi</h2>
+      <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-3">
+        <h2 class="text-xl font-bold"><i class="fa-solid fa-clock-rotate-left mr-2"></i>Riwayat Transaksi</h2>
+        <!-- Filter Jenis Transaksi -->
+        <select id="filterJenis" onchange="filterRiwayat()" class="border rounded-lg px-3 py-1.5 text-sm focus:outline-indigo-500">
+          <option value="ALL">Semua Transaksi</option>
+          <option value="PEMASUKAN">Hanya Pemasukan</option>
+          <option value="PENGELUARAN">Hanya Pengeluaran</option>
+        </select>
+      </div>
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
@@ -70,11 +82,10 @@
               <th class="p-3">Keterangan</th>
               <th class="p-3">Jumlah</th>
               <th class="p-3">Dicatat Oleh</th>
+              <th class="p-3 text-center">Aksi</th>
             </tr>
           </thead>
-          <tbody id="tabelRiwayat">
-            <!-- Riwayat di-load dinamis -->
-          </tbody>
+          <tbody id="tabelRiwayat"></tbody>
         </table>
       </div>
     </div>
@@ -82,14 +93,14 @@
   </main>
 
   <!-- Modal Tambah Transaksi -->
-  <div id="modalTransaksi" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4">
+  <div id="modalTransaksi" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl relative">
       <h2 class="text-xl font-bold mb-4">Form Transaksi Kas</h2>
       
       <form id="formTransaksi" onsubmit="simpanTransaksi(event)" class="space-y-3">
         <div>
           <label class="block text-sm font-medium">Jenis Transaksi</label>
-          <select id="jenis" class="w-full border rounded-lg p-2 mt-1">
+          <select id="jenis" class="w-full border rounded-lg p-2 mt-1 focus:outline-indigo-500">
             <option value="pemasukan">Pemasukan (Bayar Kas)</option>
             <option value="pengeluaran">Pengeluaran</option>
           </select>
@@ -97,35 +108,40 @@
 
         <div id="fieldSiswa">
           <label class="block text-sm font-medium">Nama Siswa / No. Absen (Opsional)</label>
-          <input type="text" id="infoSiswa" placeholder="Contoh: Ahmad (Absen 1)" class="w-full border rounded-lg p-2 mt-1">
+          <input type="text" id="infoSiswa" placeholder="Contoh: Ahmad (Absen 1)" class="w-full border rounded-lg p-2 mt-1 focus:outline-indigo-500">
         </div>
 
         <div>
           <label class="block text-sm font-medium">Jumlah (Rp)</label>
-          <input type="number" id="jumlah" required placeholder="10000" class="w-full border rounded-lg p-2 mt-1">
+          <input type="number" id="jumlah" required placeholder="Masukkan nominal" class="w-full border rounded-lg p-2 mt-1 focus:outline-indigo-500">
         </div>
 
         <div>
           <label class="block text-sm font-medium">Keterangan</label>
-          <input type="text" id="keterangan" required placeholder="Uang kas minggu 1 / Beli spidol" class="w-full border rounded-lg p-2 mt-1">
+          <input type="text" id="keterangan" required placeholder="Contoh: Uang kas / Beli spidol" class="w-full border rounded-lg p-2 mt-1 focus:outline-indigo-500">
         </div>
 
-        <hr class="my-2">
+        <hr class="my-3">
         <p class="text-xs text-rose-600 font-semibold">*Verifikasi Admin Kas</p>
 
         <div>
           <label class="block text-sm font-medium">Username Admin</label>
-          <input type="text" id="username" required placeholder="Suci" class="w-full border rounded-lg p-2 mt-1">
+          <input type="text" id="username" required placeholder="Masukkan Username Admin" class="w-full border rounded-lg p-2 mt-1 focus:outline-indigo-500">
         </div>
 
         <div>
           <label class="block text-sm font-medium">Password Admin</label>
-          <input type="password" id="password" required placeholder="••••••" class="w-full border rounded-lg p-2 mt-1">
+          <div class="relative mt-1">
+            <input type="password" id="password" required placeholder="Masukkan Password Admin" class="w-full border rounded-lg p-2 pr-10 focus:outline-indigo-500">
+            <button type="button" onclick="togglePasswordVisibility()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+              <i id="eyeIcon" class="fa-solid fa-eye"></i>
+            </button>
+          </div>
         </div>
 
-        <div class="flex justify-end gap-2 mt-4">
+        <div class="flex justify-end gap-2 mt-5">
           <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-lg hover:bg-slate-100">Batal</button>
-          <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Simpan</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">Simpan</button>
         </div>
       </form>
     </div>
@@ -133,25 +149,32 @@
 
   <script>
     let listSiswa = [];
+    let rawRiwayat = [];
 
     async function loadData() {
-      const res = await fetch('/api/dashboard');
-      const data = await res.json();
+      try {
+        const res = await fetch('/api/dashboard');
+        const data = await res.json();
 
-      document.getElementById('namaKelas').innerText = data.namaKelas;
-      document.getElementById('totalSaldo').innerText = 'Rp ' + data.saldo.toLocaleString('id-ID');
-      document.getElementById('totalPemasukan').innerText = 'Rp ' + data.totalPemasukan.toLocaleString('id-ID');
-      document.getElementById('totalPengeluaran').innerText = 'Rp ' + data.totalPengeluaran.toLocaleString('id-ID');
+        document.getElementById('namaKelas').innerText = data.namaKelas;
+        document.getElementById('totalSaldo').innerText = 'Rp ' + data.saldo.toLocaleString('id-ID');
+        document.getElementById('totalPemasukan').innerText = 'Rp ' + data.totalPemasukan.toLocaleString('id-ID');
+        document.getElementById('totalPengeluaran').innerText = 'Rp ' + data.totalPengeluaran.toLocaleString('id-ID');
 
-      listSiswa = data.siswa;
-      renderSiswa(listSiswa);
-      renderRiwayat(data.riwayat);
+        listSiswa = data.siswa;
+        rawRiwayat = data.riwayat;
+
+        renderSiswa(listSiswa);
+        renderRiwayat(rawRiwayat);
+      } catch (err) {
+        console.error("Gagal memuat data:", err);
+      }
     }
 
     function renderSiswa(siswa) {
       const tbody = document.getElementById('tabelSiswa');
       tbody.innerHTML = '';
-      if (siswa.length === 0) {
+      if (!siswa || siswa.length === 0) {
         tbody.innerHTML = '<tr><td colspan="3" class="p-3 text-center text-gray-500">Belum ada data siswa.</td></tr>';
         return;
       }
@@ -162,7 +185,7 @@
             <td class="p-3">${s.nama}</td>
             <td class="p-3 text-right">
               <button onclick="bayarKasSiswa('${s.nama}', ${s.absen})" class="bg-emerald-600 text-white text-xs px-3 py-1.5 rounded hover:bg-emerald-700">
-                Bayar Kas
+                <i class="fa-solid fa-plus mr-1"></i>Bayar Kas
               </button>
             </td>
           </tr>
@@ -182,7 +205,7 @@
       const tbody = document.getElementById('tabelRiwayat');
       tbody.innerHTML = '';
       if (!riwayat || riwayat.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="p-3 text-center text-gray-500">Belum ada riwayat transaksi.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="p-3 text-center text-gray-500">Belum ada riwayat transaksi.</td></tr>';
         return;
       }
       riwayat.forEach(r => {
@@ -194,9 +217,63 @@
             <td class="p-3">${r.keterangan}</td>
             <td class="p-3 font-semibold ${isMasuk ? 'text-emerald-600' : 'text-rose-600'}">Rp ${r.jumlah.toLocaleString('id-ID')}</td>
             <td class="p-3 text-sm font-medium text-indigo-600">${r.oleh}</td>
+            <td class="p-3 text-center">
+              <button onclick="hapusTransaksi(${r.id})" class="text-rose-500 hover:text-rose-700 text-xs px-2 py-1 rounded border border-rose-200 hover:bg-rose-50">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </td>
           </tr>
         `;
       });
+    }
+
+    function filterRiwayat() {
+      const jenisFilter = document.getElementById('filterJenis').value;
+      if (jenisFilter === 'ALL') {
+        renderRiwayat(rawRiwayat);
+      } else {
+        const filtered = rawRiwayat.filter(r => r.jenis === jenisFilter);
+        renderRiwayat(filtered);
+      }
+    }
+
+    async function hapusTransaksi(id) {
+      const user = prompt("Masukkan Username Admin untuk menghapus:");
+      const pass = prompt("Masukkan Password Admin:");
+
+      if (!user || !pass) return;
+
+      const response = await fetch(`/api/transaksi/${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: user, password: pass })
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        alert(result.message);
+        loadData();
+      } else {
+        alert('Gagal: ' + result.message);
+      }
+    }
+
+    function exportToCSV() {
+      if (rawRiwayat.length === 0) {
+        alert("Belum ada data riwayat untuk di-export!");
+        return;
+      }
+      let csvContent = "data:text/csv;charset=utf-8,Waktu,Jenis,Keterangan,Jumlah,Dicatat Oleh\n";
+      rawRiwayat.forEach(r => {
+        csvContent += `"${r.waktu}","${r.jenis}","${r.keterangan}",${r.jumlah},"${r.oleh}"\n`;
+      });
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `Laporan_Kas_Kelas_${new Date().toLocaleDateString('id-ID')}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
     function bayarKasSiswa(nama, absen) {
@@ -213,37 +290,58 @@
     function closeModal() {
       document.getElementById('modalTransaksi').classList.add('hidden');
       document.getElementById('formTransaksi').reset();
+      const passInput = document.getElementById('password');
+      const eyeIcon = document.getElementById('eyeIcon');
+      passInput.type = 'password';
+      eyeIcon.className = 'fa-solid fa-eye';
+    }
+
+    function togglePasswordVisibility() {
+      const passInput = document.getElementById('password');
+      const eyeIcon = document.getElementById('eyeIcon');
+      if (passInput.type === 'password') {
+        passInput.type = 'text';
+        eyeIcon.className = 'fa-solid fa-eye-slash';
+      } else {
+        passInput.type = 'password';
+        eyeIcon.className = 'fa-solid fa-eye';
+      }
     }
 
     async function simpanTransaksi(e) {
       e.preventDefault();
+
       const jenis = document.getElementById('jenis').value;
       const jumlah = document.getElementById('jumlah').value;
       const keterangan = document.getElementById('keterangan').value;
       const infoSiswa = document.getElementById('infoSiswa').value;
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
 
-      const response = await fetch('/api/transaksi', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jenis,
-          jumlah,
-          keterangan,
-          namaSiswa: infoSiswa,
-          username,
-          password
-        })
-      });
+      try {
+        const response = await fetch('/api/transaksi', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jenis,
+            jumlah,
+            keterangan,
+            namaSiswa: infoSiswa,
+            username,
+            password
+          })
+        });
 
-      const result = await response.json();
-      if (result.success) {
-        alert(result.message);
-        closeModal();
-        loadData();
-      } else {
-        alert('Gagal: ' + result.message);
+        const result = await response.json();
+        if (result.success) {
+          alert(result.message);
+          closeModal();
+          loadData();
+        } else {
+          alert('Gagal: ' + result.message);
+        }
+      } catch (err) {
+        alert('Terjadi kesalahan saat menghubungkan ke server!');
       }
     }
 
