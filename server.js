@@ -114,6 +114,10 @@ app.delete('/api/transaksi/:id', (req, res) => {
   res.json({ success: true, message: 'Transaksi berhasil dihapus!' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server Kas Kelas berjalan di http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Server Kas Kelas berjalan di http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
