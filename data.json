@@ -1,15 +1,13 @@
 {
-  "infoKelas": {
-    "namaKelas": "TKJ 1",
-    "nominalKas": 5000,
-    "pinAdmin": "1234"
-  },
-  "siswa": [
-    { "id": 1, "nama": "Ahmad" },
-    { "id": 2, "nama": "Budi" },
-    { "id": 3, "nama": "Siti" },
-    { "id": 4, "nama": "Dewi" }
-  ],
+  "namaKelas": "TKJ 1",
   "pemasukan": [],
-  "pengeluaran": []
+  "pengeluaran": [],
+  "siswa": [
+    { "absen": 1, "nama": "Ahmad" },
+    { "absen": 2, "nama": "Budi" },
+    { "absen": 3, "nama": "Citra" },
+    { "absen": 4, "nama": "Dewi" },
+    { "absen": 5, "nama": "Eko" }
+  ],
+  "riwayat": []
 }

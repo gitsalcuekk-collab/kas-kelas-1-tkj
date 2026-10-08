@@ -1,84 +1,100 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const DATA_FILE = path.join(__dirname, 'data.json');
 
-app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 function readData() {
-  if (!fs.existsSync(DATA_FILE)) return { infoKelas: {}, siswa: [], pemasukan: [], pengeluaran: [] };
+  if (!fs.existsSync(DATA_FILE)) {
+    const initialData = {
+      namaKelas: "TKJ 1",
+      pemasukan: [],
+      pengeluaran: [],
+      siswa: [],
+      riwayat: []
+    };
+    fs.writeFileSync(DATA_FILE, JSON.stringify(initialData, null, 2));
+    return initialData;
+  }
   const rawData = fs.readFileSync(DATA_FILE);
   return JSON.parse(rawData);
 }
 
-function saveData(data) {
+function writeData(data) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 }
 
+// Endpoint untuk mendapatkan seluruh data dashboard
 app.get('/api/dashboard', (req, res) => {
   const data = readData();
-  const totalMasuk = data.pemasukan.reduce((sum, item) => sum + item.nominal, 0);
-  const totalKeluar = data.pengeluaran.reduce((sum, item) => sum + item.nominal, 0);
-  const saldo = totalMasuk - totalKeluar;
+  
+  const totalPemasukan = (data.pemasukan || []).reduce((acc, item) => acc + item.jumlah, 0);
+  const totalPengeluaran = (data.pengeluaran || []).reduce((acc, item) => acc + item.jumlah, 0);
+  const saldo = totalPemasukan - totalPengeluaran;
 
   res.json({
-    infoKelas: data.infoKelas,
+    namaKelas: data.namaKelas,
+    totalPemasukan,
+    totalPengeluaran,
     saldo,
-    totalMasuk,
-    totalKeluar,
-    siswa: data.siswa,
-    pemasukan: data.pemasukan,
-    pengeluaran: data.pengeluaran
+    pemasukan: data.pemasukan || [],
+    pengeluaran: data.pengeluaran || [],
+    siswa: data.siswa || [],
+    riwayat: data.riwayat || []
   });
 });
 
-app.post('/api/pemasukan', (req, res) => {
-  const { pin, siswaId, mingguKe, nominal } = req.body;
-  const data = readData();
+// Endpoint untuk menambah Pemasukan / Pengeluaran (dengan autentikasi username & password)
+app.post('/api/transaksi', (req, res) => {
+  const { username, password, jenis, jumlah, keterangan, namaSiswa, absen } = req.body;
 
-  if (pin !== data.infoKelas.pinAdmin) {
-    return res.status(401).json({ success: false, message: 'PIN Admin Salah!' });
+  // Verifikasi Username dan Password Admin
+  if (username !== 'Suci' || password !== 'suci22') {
+    return res.status(401).json({ success: false, message: 'Username atau Password Admin salah!' });
   }
 
-  const siswaObj = data.siswa.find(s => s.id === parseInt(siswaId));
+  if (!jumlah || jumlah <= 0 || !keterangan) {
+    return res.status(400).json({ success: false, message: 'Jumlah dan keterangan harus diisi dengan benar!' });
+  }
+
+  const data = readData();
+  const witaTime = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+
   const transaksiBaru = {
-    id: 'IN-' + Date.now(),
-    siswaId: parseInt(siswaId),
-    namaSiswa: siswaObj ? siswaObj.nama : 'Anonim',
-    mingguKe: parseInt(mingguKe),
-    nominal: parseInt(nominal),
-    tanggal: new Date().toLocaleDateString('id-ID')
+    id: Date.now(),
+    jumlah: Number(jumlah),
+    keterangan,
+    namaSiswa: namaSiswa || '-',
+    absen: absen || '-',
+    tanggal: witaTime,
+    ditambahkanOleh: username
   };
 
-  data.pemasukan.push(transaksiBaru);
-  saveData(data);
-  res.json({ success: true, message: 'Pembayaran kas berhasil dicatat!' });
-});
-
-app.post('/api/pengeluaran', (req, res) => {
-  const { pin, keterangan, nominal } = req.body;
-  const data = readData();
-
-  if (pin !== data.infoKelas.pinAdmin) {
-    return res.status(401).json({ success: false, message: 'PIN Admin Salah!' });
+  if (jenis === 'pemasukan') {
+    data.pemasukan.push(transaksiBaru);
+  } else if (jenis === 'pengeluaran') {
+    data.pengeluaran.push(transaksiBaru);
+  } else {
+    return res.status(400).json({ success: false, message: 'Jenis transaksi tidak valid!' });
   }
 
-  const pengeluaranBaru = {
-    id: 'OUT-' + Date.now(),
-    keterangan,
-    nominal: parseInt(nominal),
-    tanggal: new Date().toLocaleDateString('id-ID')
-  };
+  // Catat ke riwayat
+  data.riwayat.unshift({
+    id: Date.now(),
+    jenis: jenis.toUpperCase(),
+    keterangan: `${keterangan} ${namaSiswa ? `(Siswa: ${namaSiswa} - Absen${absen})` : ''}`,
+    jumlah: Number(jumlah),
+    oleh: username,
+    waktu: witaTime
+  });
 
-  data.pengeluaran.push(pengeluaranBaru);
-  saveData(data);
-  res.json({ success: true, message: 'Pengeluaran berhasil dicatat!' });
+  writeData(data);
+  res.json({ success: true, message: 'Transaksi berhasil ditambahkan!' });
 });
 
 app.listen(PORT, () => {
