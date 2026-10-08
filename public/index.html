@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kas Kelas Digital</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+  <div class="container py-4">
+    <h2 class="text-center fw-bold mb-1" id="titleKelas">Kas Kelas</h2>
+    <p class="text-center text-muted mb-4">Transparansi Keuangan Kelas Kita</p>
+
+    <div class="row g-3 mb-4">
+      <div class="col-md-4">
+        <div class="card bg-primary text-white p-3 shadow-sm">
+          <small>Sisa Saldo Kas</small>
+          <h3 class="fw-bold m-0" id="txtSaldo">Rp 0</h3>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card bg-success text-white p-3 shadow-sm">
+          <small>Total Pemasukan</small>
+          <h4 class="fw-bold m-0" id="txtMasuk">Rp 0</h4>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card bg-danger text-white p-3 shadow-sm">
+          <small>Total Pengeluaran</small>
+          <h4 class="fw-bold m-0" id="txtKeluar">Rp 0</h4>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2 mb-4">
+      <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalMasuk">+ Bayar Kas</button>
+      <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modalKeluar">- Pengeluaran / Beli Barang</button>
+    </div>
+
+    <div class="card p-3 shadow-sm mb-4">
+      <h5 class="fw-bold mb-3">Riwayat Pengeluaran</h5>
+      <ul class="list-group list-group-flush" id="listKeluar"></ul>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalMasuk" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content p-3">
+        <h5>Bayar Kas Siswa</h5>
+        <select id="selSiswa" class="form-select mb-2"></select>
+        <input type="number" id="inMinggu" class="form-control mb-2" placeholder="Minggu Ke- (contoh: 1)">
+        <input type="number" id="inNominalMasuk" class="form-control mb-2" placeholder="Nominal (Rp)">
+        <input type="password" id="pinMasuk" class="form-control mb-3" placeholder="PIN Admin (1234)">
+        <button onclick="kirimMasuk()" class="btn btn-success w-100">Simpan Pemasukan</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalKeluar" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content p-3">
+        <h5>Catat Pengeluaran</h5>
+        <input type="text" id="inKet" class="form-control mb-2" placeholder="Keterangan (misal: Beli Spidol)">
+        <input type="number" id="inNominalKeluar" class="form-control mb-2" placeholder="Nominal (Rp)">
+        <input type="password" id="pinKeluar" class="form-control mb-3" placeholder="PIN Admin (1234)">
+        <button onclick="kirimKeluar()" class="btn btn-danger w-100">Simpan Pengeluaran</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    async function loadData() {
+      const res = await fetch('/api/dashboard');
+      const data = await res.json();
+
+      document.getElementById('titleKelas').innerText = `Kas Kelas ${data.infoKelas.namaKelas}`;
+      document.getElementById('txtSaldo').innerText = `Rp ${data.saldo.toLocaleString('id-ID')}`;
+      document.getElementById('txtMasuk').innerText = `Rp ${data.totalMasuk.toLocaleString('id-ID')}`;
+      document.getElementById('txtKeluar').innerText = `Rp ${data.totalKeluar.toLocaleString('id-ID')}`;
+
+      const sel = document.getElementById('selSiswa');
+      sel.innerHTML = data.siswa.map(s => `<option value="${s.id}">${s.nama}</option>`).join('');
+
+      const listK = document.getElementById('listKeluar');
+      if(data.pengeluaran.length === 0) {
+        listK.innerHTML = '<li class="list-group-item text-muted">Belum ada pengeluaran.</li>';
+      } else {
+        listK.innerHTML = data.pengeluaran.map(k => `
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <strong>${k.keterangan}</strong><br>
+              <small class="text-muted">${k.tanggal}</small>
+            </div>
+            <span class="text-danger fw-bold">- Rp ${k.nominal.toLocaleString('id-ID')}</span>
+          </li>
+        `).join('');
+      }
+    }
+
+    async function kirimMasuk() {
+      const payload = {
+        siswaId: document.getElementById('selSiswa').value,
+        mingguKe: document.getElementById('inMinggu').value,
+        nominal: document.getElementById('inNominalMasuk').value,
+        pin: document.getElementById('pinMasuk').value
+      };
+      const res = await fetch('/api/pemasukan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const result = await res.json();
+      alert(result.message);
+      if(result.success) location.reload();
+    }
+
+    async function kirimKeluar() {
+      const payload = {
+        keterangan: document.getElementById('inKet').value,
+        nominal: document.getElementById('inNominalKeluar').value,
+        pin: document.getElementById('pinKeluar').value
+      };
+      const res = await fetch('/api/pengeluaran', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const result = await res.json();
+      alert(result.message);
+      if(result.success) location.reload();
+    }
+
+    loadData();
+  </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "infoKelas": {
+    "namaKelas": "TKJ 1",
+    "nominalKas": 5000,
+    "pinAdmin": "1234"
+  },
+  "siswa": [
+    { "id": 1, "nama": "Ahmad" },
+    { "id": 2, "nama": "Budi" },
+    { "id": 3, "nama": "Siti" },
+    { "id": 4, "nama": "Dewi" }
+  ],
+  "pemasukan": [],
+  "pengeluaran": []
+}
